@@ -1,11 +1,12 @@
 services:
   www:
     build:
+      context: .
       dockerfile: ./dockerfile.www
     volumes:
       - "./backend_stock:/app/backend_stock"
+      - "./alembic.ini:/app/alembic.ini"
       - "./db:/app/db"
-      - "./docker/www/prestart.sh:/app/prestart.sh"
     ports:
       - "80:80"
     environment:
@@ -13,47 +14,64 @@ services:
       RELOAD: true
       DATABASE_URL: postgresql://main:main12345@db/main
       CELERY_BROKER: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
     depends_on:
       - db
       - redis
+    user: "${UID:-1000}:${GID:-1000}"
 
   celery-scheduler:
     build:
+      context: .
       dockerfile: ./dockerfile.celery
     volumes:
       - "./backend_stock:/app/backend_stock"
+      - "./alembic.ini:/app/alembic.ini"
       - "./db:/app/db"
-      - "./docker/celery/prestart.sh:/app/prestart.sh"
     environment:
       IS_DEV: true
       DATABASE_URL: postgresql://main:main12345@db/main
       CELERY_BROKER: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      ENABLE_BEAT: "true"
     depends_on:
       - db
       - redis
+    user: "${UID:-1000}:${GID:-1000}"
 
   celery-node:
     build:
+      context: .
       dockerfile: ./dockerfile.celery
     volumes:
       - "./backend_stock:/app/backend_stock"
+      - "./alembic.ini:/app/alembic.ini"
       - "./db:/app/db"
-      - "./docker/celery/prestart.sh:/app/prestart.sh"
     environment:
       IS_DEV: true
       DATABASE_URL: postgresql://main:main12345@db/main
       CELERY_BROKER: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
     depends_on:
       - db
       - redis
+    user: "${UID:-1000}:${GID:-1000}"
 
   redis:
-    image: redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
 
   db:
-    image: postgres
+    image: postgres:15-alpine
     restart: always
     environment:
       POSTGRES_PASSWORD: main12345
       POSTGRES_USER: main
       POSTGRES_DB: main
+   
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

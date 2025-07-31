@@ -2,7 +2,6 @@
 
 echo "FastAPI Prestart Script Running"
 
-
 if [ ! -z "$IS_DEV" ]; then
   DB_HOST=$(python -c "from urllib.parse import urlparse; print(urlparse('${DATABASE_URL}').netloc.split('@')[-1]);")
   if [ ! -z "$DB_HOST" ]; then
@@ -14,12 +13,11 @@ if [ ! -z "$IS_DEV" ]; then
   fi
 fi
 
-echo "Run Database Migrations"
-python -m alembic upgrade head
-
+# Skipping database migrations (commented out)
+# echo "Run Database Migrations"
+# python -m alembic upgrade head
 
 if [ ! -z "$CREATE_TEST_DATA" ]; then
   echo "Creating test data..."
   python -m backend_stock.cli test-data
 fi
-

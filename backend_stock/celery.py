@@ -6,10 +6,10 @@ broker_url = os.getenv('CELERY_BROKER', 'redis://localhost:6379/0')
 result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 
 celery = Celery(
-    "stock_backend",
+    "backend_stock",
     broker=broker_url,
     backend=result_backend,
-    include=['stock_backend.celery']
+    include=['backend_stock.celery']
 )
 
 # Celery configuration
@@ -21,7 +21,7 @@ celery.conf.update(
     enable_utc=True,
     beat_schedule={
         'hello-every-15-seconds': {
-            'task': 'stock_backend.celery.hello_world',
+            'task': 'backend_stock.celery.hello_world',
             'schedule': 15.0,
         },
     },
