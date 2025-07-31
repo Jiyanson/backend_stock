@@ -22,3 +22,20 @@ RUN cp /app/docker/www/prestart.sh /app/prestart.sh
 
 # Install the package in development mode
 RUN pip install -e .
+
+# Create a startup script that fixes permissions
+RUN echo '#!/bin/bash\n\
+# Fix permissions for mounted volumes\n\
+chown -R root:root /app\n\
+chmod -R 755 /app\n\
+# Run the original prestart script\n\
+/app/prestart.sh\n\
+# Start uvicorn without auto-reload to avoid permission issues\n\
+exec uvicorn $APP_MODULE --host 0.0.0.0 --port 80' > /app/startup.sh && \
+    chmod +x /app/startup.sh
+
+# Set PYTHONPATH to ensure imports work correctly
+ENV PYTHONPATH=/app
+
+# Override the default command
+CMD ["/app/startup.sh"]

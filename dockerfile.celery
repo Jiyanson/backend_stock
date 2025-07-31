@@ -9,3 +9,13 @@ RUN apt-get update && apt-get install -y netcat-traditional && rm -rf /var/lib/a
 
 COPY ./docker/celery/prestart.sh /app/prestart.sh
 COPY ./ /app
+
+# Install the package in development mode
+WORKDIR /app
+RUN pip install -e .
+
+# Ensure proper permissions for the app directory
+RUN chmod -R 755 /app
+
+# Set PYTHONPATH to ensure imports work correctly
+ENV PYTHONPATH=/app

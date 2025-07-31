@@ -4,21 +4,24 @@ services:
       context: .
       dockerfile: ./dockerfile.www
     volumes:
-      - "./backend_stock:/app/backend_stock"
-      - "./alembic.ini:/app/alembic.ini"
-      - "./db:/app/db"
+      - "./backend_stock:/app/backend_stock:rw"
+      - "./alembic.ini:/app/alembic.ini:ro"
+      - "./db:/app/db:rw"
+      - "./pyproject.toml:/app/pyproject.toml:ro"
+      - "./requirements.txt:/app/requirements.txt:ro"
     ports:
       - "80:80"
     environment:
       IS_DEV: true
-      RELOAD: true
+      RELOAD: false  # Disable auto-reload to avoid permission issues
       DATABASE_URL: postgresql://main:main12345@db/main
       CELERY_BROKER: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+      PYTHONPATH: /app
     depends_on:
       - db
       - redis
-    user: "${UID:-1000}:${GID:-1000}"
+    privileged: true  # Add privileged mode to handle permissions
 
   celery-scheduler:
     build:
@@ -28,16 +31,20 @@ services:
       - "./backend_stock:/app/backend_stock"
       - "./alembic.ini:/app/alembic.ini"
       - "./db:/app/db"
+      - "./pyproject.toml:/app/pyproject.toml"
+      - "./requirements.txt:/app/requirements.txt"
     environment:
       IS_DEV: true
       DATABASE_URL: postgresql://main:main12345@db/main
       CELERY_BROKER: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       ENABLE_BEAT: "true"
+      PYTHONPATH: /app
     depends_on:
       - db
       - redis
-    user: "${UID:-1000}:${GID:-1000}"
+    # Remove user directive to run as root initially
+    # user: "${UID:-1000}:${GID:-1000}"
 
   celery-node:
     build:
@@ -47,15 +54,19 @@ services:
       - "./backend_stock:/app/backend_stock"
       - "./alembic.ini:/app/alembic.ini"
       - "./db:/app/db"
+      - "./pyproject.toml:/app/pyproject.toml"
+      - "./requirements.txt:/app/requirements.txt"
     environment:
       IS_DEV: true
       DATABASE_URL: postgresql://main:main12345@db/main
       CELERY_BROKER: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+      PYTHONPATH: /app
     depends_on:
       - db
       - redis
-    user: "${UID:-1000}:${GID:-1000}"
+    # Remove user directive to run as root initially
+    # user: "${UID:-1000}:${GID:-1000}"
 
   redis:
     image: redis:7-alpine
@@ -69,7 +80,8 @@ services:
       POSTGRES_PASSWORD: main12345
       POSTGRES_USER: main
       POSTGRES_DB: main
-   
+    ports:
+      - "5454:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
